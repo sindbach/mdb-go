@@ -1,0 +1,12 @@
+Replica Set Status: 
+{{range .Status.Members}}
+    Member: {{.Name}} {{.StateStr}}
+{{end}}
+
+
+List of Users:
+
+{{range .Users}}
+    { id : {{.Id.Hex}} , name: {{.Name}} , assigned: {{.Assigned}} }
+{{end}}
+
