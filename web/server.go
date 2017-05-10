@@ -1,11 +1,11 @@
 package main
 
 import (
+    "path"
+    "fmt"
 	"net/http"
     "gopkg.in/mgo.v2"
     "html/template"
-    "path"
-    "fmt"
     "github.com/sindbach/gomongo/models"
 )
 

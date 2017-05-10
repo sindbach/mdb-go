@@ -1,11 +1,11 @@
 package main
 
 import (
-    "gopkg.in/mgo.v2"
-    "gopkg.in/mgo.v2/bson"
     "fmt"
     "math"
     "time"
+    "gopkg.in/mgo.v2"
+    "gopkg.in/mgo.v2/bson"
     "github.com/gizak/termui"
     "github.com/sindbach/gomongo/models"
 )
