@@ -1,7 +1,16 @@
 # mgo-intro
 Introduction to mgo (MongoDB Go Driver) connecting to replica set
 
+## Building
 
+```
+mkdir bin
+go build -o bin/insert client/insert.go
+go build -o bin/webserver web/server.go
+go build -o bin/monitor terminal/monitor.go
+```
+
+## Setup
 Starts replica set as: 
 
 ```
@@ -15,12 +24,22 @@ Initiate replica set
 rs.initiate({_id:"gopher" members:[{_id:0, host:"localhost:30001"}]})
 ```
 
-Run go server: 
+## Demo
+
+Run client to insert random documents
 ```
-go run server.go
+while true; do echo 'inserting'; ./bin/insert; sleep 2; done
 ```
 
-Run go client insert:
+Run web server: 
 ```
-while true; do echo 'inserting'; go run insert.go; sleep 2; done
+./bin/webserver
 ```
+
+
+Run terminal monitoring: 
+```
+./bin/monitor
+```
+('q' to quit)
+
