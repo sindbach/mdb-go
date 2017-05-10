@@ -10,7 +10,6 @@ import (
     "github.com/sindbach/gomongo/models"
 )
 
-
 func StatProcess(statCacheOp []float64, currentStatOp int64, previousStatOp int64, steep int, limit int) (newStatCacheOp []float64, err error){
     if len(statCacheOp) > limit {
         statCacheOp  = statCacheOp[1:]
@@ -35,6 +34,19 @@ func StatProcess(statCacheOp []float64, currentStatOp int64, previousStatOp int6
         newStatCacheOp = append(statCacheOp, float64(currentStatOp-previousStatOp))
     }
     return newStatCacheOp, nil
+}
+
+func RetrieveResults(results *[]string, session *mgo.Session)(err error) {
+    users := make([]models.User, 0, 10)
+    c := session.DB("gopher").C("users")
+    err = c.Find(nil).Limit(10).Sort("-_id").All(&users)
+    if err != nil {
+        return err
+    }
+    for i:= range users {
+        *results = append(*results, fmt.Sprintf("%d %s", users[i].Assigned, users[i].Name))
+    }
+    return nil
 }
 
 func RetrieveStats(statCache *models.StatCache, session *mgo.Session) (err error){
@@ -66,10 +78,6 @@ func RetrieveStats(statCache *models.StatCache, session *mgo.Session) (err error
         return err
     }
 
-    //fmt.Println("current commands:", stat.Opcounters.Command)
-    //fmt.Println("inside commands: ", statCache.OpCommands)
-    //fmt.Println("current inserts:", stat.Opcounters.Insert)
-    //fmt.Println("primary: ", stat.Repl.Primary)
     statCache.PreviousStat = stat
     return nil
 } 
@@ -87,21 +95,11 @@ func main() {
         panic(err)
     }
 
-    session.SetMode(mgo.Monotonic, true)
+    session.SetMode(mgo.Eventual, true)
     session.SetSocketTimeout(0)
     defer session.Close()
 
     statCache := &models.StatCache{First:true} 
-
-    /*for i:=0;i<1000;i++ {
-        err = RetrieveStats(statCache, session)
-        if err!=nil{
-            panic(err)
-        }
-        fmt.Println(statCache.OpInserts)
-
-        time.Sleep(300 * time.Millisecond)
-    }*/
 
     lc0 := termui.NewLineChart()
     lc0.BorderLabel = "OpCounter Commands"
@@ -116,20 +114,36 @@ func main() {
     lc0.AxesColor = termui.ColorWhite
     lc0.LineColor = termui.ColorGreen | termui.AttrBold
 
-    bc1 := termui.NewBarChart()
-    bc1.Data = []int{3, 2, 5}
-    bc1.DataLabels = []string{"localhost:27000", "localhost:27001", "localhost:27002"}
-    bc1.BorderLabel = "Status"
-    bc1.Width = 40
-    bc1.Height = 10
-    bc1.TextColor = termui.ColorGreen
-    bc1.BarColor = termui.ColorGreen
-    bc1.NumColor = termui.ColorYellow
-    bc1.X = 50
-    bc1.Y = 0
+    g1 := termui.NewGauge()
+    g1.Percent = 100
+    g1.Width = 40
+    g1.Height = 5 
+    g1.X = 50 
+    g1.Y = 0
 
+    g2 := termui.NewGauge()
+    g2.Percent = 100
+    g2.Width = 40
+    g2.Height = 5 
+    g2.X = 50 
+    g1.Y = 5
 
-    termui.Render(lc0, bc1)
+    g3 := termui.NewGauge()
+    g3.Percent = 100
+    g3.Width = 40
+    g3.Height = 5
+    g3.X = 50 
+    g3.Y = 10
+
+    ls := termui.NewList()
+    ls.Items = []string{}
+    ls.ItemFgColor = termui.ColorYellow
+    ls.BorderLabel = "Latest 10"
+    ls.Height = 11
+    ls.Width = 50
+    ls.Y = 15
+
+    termui.Render(lc0, g1, g2, g3)
     
     termui.Handle("/sys/kbd/q", func(termui.Event) {
         termui.StopLoop()
@@ -144,10 +158,24 @@ func main() {
             session.Refresh()
         } else {
             lc0.Data = statCache.OpCommands
-            //bc1.Data = statCache.OpInserts
-            //fmt.Println("outside: ", statCache.OpInserts)
-            termui.Render(lc0, bc1)
+            gauges := []*termui.Gauge{g1, g2, g3}
+            for i:=0; i<len(statCache.PreviousStat.Repl.Hosts); i++ {
+                gauges[i].BorderLabel = statCache.PreviousStat.Repl.Hosts[i]
+                gauges[i].BarColor = termui.ColorYellow
+                if statCache.PreviousStat.Repl.Primary == statCache.PreviousStat.Repl.Hosts[i] {
+                    gauges[i].BarColor = termui.ColorGreen
+                }
+            }
         }
+        results := make([]string, 0, 10)
+        err = RetrieveResults(&results, session)
+        if err!=nil {
+            fmt.Println(err)
+            session.Refresh()
+        }
+        ls.Items = results
+        
+        termui.Render(lc0, g1, g2, g3, ls)
     })
     
     termui.Loop()
