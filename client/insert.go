@@ -7,30 +7,9 @@ import (
     "gopkg.in/mgo.v2"
     "gopkg.in/mgo.v2/bson"
     "github.com/sindbach/gomongo/models"
-    //"crypto/tls"
-    //"net"
 )
 
 func main() {
-
-    /*tlsConfig := &tls.Config{}
-    dialInfo := &mgo.DialInfo{
-        Addrs: []string{"dagobah-shard-00-02-nesbp.mongodb.net:27017"},
-        Database: "admin",
-        Username: "skywalker",
-        Password: "1amsecure",
-        Timeout:  5 * time.Second, 
-    }
-
-    dialInfo.DialServer = func(addr *mgo.ServerAddr) (net.Conn, error) {
-        conn, err := tls.Dial("tcp", addr.String(), tlsConfig)
-        return conn, err
-    }
-    session, err := mgo.DialWithInfo(dialInfo)
-    if err != nil {
-        panic(err)
-    }
-    */
 
     session, err := mgo.Dial("localhost:27000,localhost:27001,localhost:27002")
     if err != nil {
@@ -44,7 +23,8 @@ func main() {
 
     // Define list of users
     userLists := []string {
-        "Markus Thielsch",
+        "John Smith",
+        "Mr. Gopher",
         "Stephen Steneker",
         "Wan Bachtiar",
     }
@@ -55,5 +35,5 @@ func main() {
     if err != nil {
         panic(err)
     }
-    fmt.Println("Inserted ", i)
+    fmt.Println("Inserted ObjectId:", i)
 }
