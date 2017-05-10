@@ -43,3 +43,5 @@ Run terminal monitoring:
 ```
 ('q' to quit)
 
+<img src="./images/monitor.gif" alt="demo cast under osx 10.12; Menlo Regular 12pt.)" width="80%">
+
