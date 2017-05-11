@@ -65,7 +65,7 @@ func RetrieveStats(statCache *models.StatCache, session *mgo.Session) (err error
         if err != nil {
             return err
         }
-        statCache.OpDeletes = append(statCache.OpDeletes, 0)
+        statCache.OpCommands = append(statCache.OpCommands, 0)
         statCache.OpInserts = append(statCache.OpInserts, 0)
         statCache.PreviousStat = stat
         statCache.First = false
@@ -75,12 +75,12 @@ func RetrieveStats(statCache *models.StatCache, session *mgo.Session) (err error
         return err
     }
 
-    statCache.OpInserts, err = StatProcess(statCache.OpInserts, stat.Opcounters.Insert, statCache.PreviousStat.Opcounters.Insert, steep, limit)
+    statCache.OpInserts, err = StatProcess(statCache.OpInserts, stat.OpcountersRepl.Insert, statCache.PreviousStat.OpcountersRepl.Insert, steep, limit)
     if err != nil {
         return err
     }
 
-    statCache.OpDeletes, err = StatProcess(statCache.OpDeletes, stat.Opcounters.Delete, statCache.PreviousStat.Opcounters.Delete, steep, limit)
+    statCache.OpCommands, err = StatProcess(statCache.OpCommands, stat.Opcounters.Command, statCache.PreviousStat.Opcounters.Command, steep, limit)
     if err != nil {
         return err
     }
@@ -109,7 +109,7 @@ func main() {
     statCache := &models.StatCache{First:true} 
 
     lc0 := termui.NewLineChart()
-    lc0.BorderLabel = "OpCounter Inserts"
+    lc0.BorderLabel = "Replication Inserts"
     lc0.Mode = "dot"
     lc0.Data = statCache.OpInserts
     lc0.Width = 50
@@ -120,9 +120,9 @@ func main() {
     lc0.LineColor = termui.ColorGreen 
 
     lc1 := termui.NewLineChart()
-    lc1.BorderLabel = "OpCounter Deletes"
+    lc1.BorderLabel = "OpCounter Commands"
     lc1.Mode = "dot"
-    lc1.Data = statCache.OpDeletes
+    lc1.Data = statCache.OpCommands
     lc1.Width = 50
     lc1.Height = 12
     lc1.X = 0
@@ -178,7 +178,7 @@ func main() {
             session.Refresh()
         } else {
             lc0.Data = statCache.OpInserts
-            lc1.Data = statCache.OpDeletes
+            lc1.Data = statCache.OpCommands
 
             gauges := []*termui.Gauge{g1, g2, g3}
             for i:=0; i<len(statCache.PreviousStat.Repl.Hosts); i++ {

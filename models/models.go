@@ -23,14 +23,15 @@ type WebData struct {
 
 type StatCache struct {
     PreviousStat             *ServerStatus
-    OpDeletes                []float64
+    OpCommands                []float64
     OpInserts                []float64
     First                     bool
 }
 
 type ServerStatus struct {
     Host               string                 `bson:"host"`
-    Opcounters         *OpcountStats          `bson:"opcountersRepl"`
+    Opcounters         *OpcountStats          `bson:"opcounters"`
+    OpcountersRepl     *OpcountStats          `bson:"opcountersRepl"`
     Repl               *ReplStatus            `bson:"repl"`
 }
 
