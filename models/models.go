@@ -2,12 +2,13 @@ package models
 
 import (
     "gopkg.in/mgo.v2/bson"
+    "time"
 )
 
 type User struct {
     Id bson.ObjectId `bson:"_id"`
     Name string 
-    Assigned int32
+    Created time.Time
 }
 type ReplSetGetStatus struct {
     Members []struct {
@@ -22,7 +23,7 @@ type WebData struct {
 
 type StatCache struct {
     PreviousStat             *ServerStatus
-    OpCommands               []float64
+    OpDeletes                []float64
     OpInserts                []float64
     First                     bool
 }
