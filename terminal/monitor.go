@@ -133,7 +133,7 @@ func main() {
     g1 := termui.NewGauge()
     g1.BarColor = termui.ColorYellow
     g1.Percent = 100
-    g1.Width = 40
+    g1.Width = 50
     g1.Height = 4 
     g1.X = 50 
     g1.Y = 0
@@ -141,7 +141,7 @@ func main() {
     g2 := termui.NewGauge()
     g2.BarColor = termui.ColorYellow
     g2.Percent = 100
-    g2.Width = 40
+    g2.Width = 50
     g2.Height = 4 
     g2.X = 50 
     g1.Y = 4
@@ -149,7 +149,7 @@ func main() {
     g3 := termui.NewGauge()
     g3.BarColor = termui.ColorYellow
     g3.Percent = 100
-    g3.Width = 40
+    g3.Width = 50
     g3.Height = 4
     g3.X = 50 
     g3.Y = 8
