@@ -31,7 +31,7 @@ func main() {
     c := session.DB("gopher").C("users")
     
     i := bson.NewObjectId()
-    err = c.Insert(&models.User{Id: i,Name: userLists[rand.Intn(len(userLists))], Assigned: rand.Int31()})
+    err = c.Insert(&models.User{Id: i, Name: userLists[rand.Intn(len(userLists))], Created:time.Now()})
     if err != nil {
         panic(err)
     }
