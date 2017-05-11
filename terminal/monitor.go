@@ -10,6 +10,19 @@ import (
     "github.com/sindbach/gomongo/models"
 )
 
+func RetrieveResults(results *[]string, session *mgo.Session)(err error) {
+    users := make([]models.User, 0, 10)
+    c := session.DB("gopher").C("users")
+    err = c.Find(nil).Limit(10).Sort("-_id").All(&users)
+    if err != nil {
+        return err
+    }
+    for i:= range users {
+        *results = append(*results, fmt.Sprintf("%s %s", users[i].Name, users[i].Id.String()))
+    }
+    return nil
+}
+
 func StatProcess(statCacheOp []float64, currentStatOp int64, previousStatOp int64, steep int, limit int) (newStatCacheOp []float64, err error){
     if len(statCacheOp) > limit {
         statCacheOp  = statCacheOp[1:]
@@ -17,9 +30,12 @@ func StatProcess(statCacheOp []float64, currentStatOp int64, previousStatOp int6
         statCacheOp = statCacheOp
     }
     prevCount := float64(previousStatOp)
-    if prevCount != 0 {
+    if prevCount > 0 {
         prevStat := float64(statCacheOp[len(statCacheOp)-1])
         diff := float64(currentStatOp-int64(prevCount))
+        if diff < 0 {
+            diff = 0
+        }
         increment := float64((diff-prevStat)/float64(steep))
         smoothers := []float64{diff}
         if math.Abs(diff-prevStat) > 1 && diff != prevStat{
@@ -31,22 +47,13 @@ func StatProcess(statCacheOp []float64, currentStatOp int64, previousStatOp int6
         } 
         newStatCacheOp = append(statCacheOp,  smoothers...)
     } else {
-        newStatCacheOp = append(statCacheOp, float64(currentStatOp-previousStatOp))
+        diff := float64(currentStatOp-previousStatOp)
+        if diff < 0 {
+            diff = 0
+        }
+        newStatCacheOp = append(statCacheOp, diff)
     }
     return newStatCacheOp, nil
-}
-
-func RetrieveResults(results *[]string, session *mgo.Session)(err error) {
-    users := make([]models.User, 0, 10)
-    c := session.DB("gopher").C("users")
-    err = c.Find(nil).Limit(10).Sort("-_id").All(&users)
-    if err != nil {
-        return err
-    }
-    for i:= range users {
-        *results = append(*results, fmt.Sprintf("%d %s", users[i].Assigned, users[i].Name))
-    }
-    return nil
 }
 
 func RetrieveStats(statCache *models.StatCache, session *mgo.Session) (err error){
@@ -58,7 +65,7 @@ func RetrieveStats(statCache *models.StatCache, session *mgo.Session) (err error
         if err != nil {
             return err
         }
-        statCache.OpCommands = append(statCache.OpCommands, 0)
+        statCache.OpDeletes = append(statCache.OpDeletes, 0)
         statCache.OpInserts = append(statCache.OpInserts, 0)
         statCache.PreviousStat = stat
         statCache.First = false
@@ -73,7 +80,7 @@ func RetrieveStats(statCache *models.StatCache, session *mgo.Session) (err error
         return err
     }
 
-    statCache.OpCommands, err = StatProcess(statCache.OpCommands, stat.Opcounters.Command, statCache.PreviousStat.Opcounters.Command, steep, limit)
+    statCache.OpDeletes, err = StatProcess(statCache.OpDeletes, stat.Opcounters.Delete, statCache.PreviousStat.Opcounters.Delete, steep, limit)
     if err != nil {
         return err
     }
@@ -102,49 +109,62 @@ func main() {
     statCache := &models.StatCache{First:true} 
 
     lc0 := termui.NewLineChart()
-    lc0.BorderLabel = "OpCounter Commands"
+    lc0.BorderLabel = "OpCounter Inserts"
     lc0.Mode = "dot"
-    lc0.Data = statCache.OpCommands
-    lc0.LineColor = termui.ColorGreen
-
+    lc0.Data = statCache.OpInserts
     lc0.Width = 50
     lc0.Height = 12
     lc0.X = 0
     lc0.Y = 0
     lc0.AxesColor = termui.ColorWhite
-    lc0.LineColor = termui.ColorGreen | termui.AttrBold
+    lc0.LineColor = termui.ColorGreen 
+
+    lc1 := termui.NewLineChart()
+    lc1.BorderLabel = "OpCounter Deletes"
+    lc1.Mode = "dot"
+    lc1.Data = statCache.OpDeletes
+    lc1.Width = 50
+    lc1.Height = 12
+    lc1.X = 0
+    lc1.Y = 12
+    lc1.AxesColor = termui.ColorWhite
+    lc1.LineColor = termui.ColorGreen 
 
     g1 := termui.NewGauge()
+    g1.BarColor = termui.ColorYellow
     g1.Percent = 100
     g1.Width = 40
-    g1.Height = 5 
+    g1.Height = 4 
     g1.X = 50 
     g1.Y = 0
 
     g2 := termui.NewGauge()
+    g2.BarColor = termui.ColorYellow
     g2.Percent = 100
     g2.Width = 40
-    g2.Height = 5 
+    g2.Height = 4 
     g2.X = 50 
-    g1.Y = 5
+    g1.Y = 4
 
     g3 := termui.NewGauge()
+    g3.BarColor = termui.ColorYellow
     g3.Percent = 100
     g3.Width = 40
-    g3.Height = 5
+    g3.Height = 4
     g3.X = 50 
-    g3.Y = 10
+    g3.Y = 8
 
     ls := termui.NewList()
     ls.Items = []string{}
     ls.ItemFgColor = termui.ColorYellow
     ls.BorderLabel = "Latest 10"
-    ls.Height = 11
     ls.Width = 50
-    ls.Y = 15
+    ls.Height = 12
+    ls.X = 50
+    ls.Y = 12
 
-    termui.Render(lc0, g1, g2, g3)
-    
+    termui.Render(lc0, lc1, g1, g2, g3, ls)
+
     termui.Handle("/sys/kbd/q", func(termui.Event) {
         termui.StopLoop()
     })
@@ -157,16 +177,19 @@ func main() {
             fmt.Println(err)
             session.Refresh()
         } else {
-            lc0.Data = statCache.OpCommands
+            lc0.Data = statCache.OpInserts
+            lc1.Data = statCache.OpDeletes
+
             gauges := []*termui.Gauge{g1, g2, g3}
             for i:=0; i<len(statCache.PreviousStat.Repl.Hosts); i++ {
                 gauges[i].BorderLabel = statCache.PreviousStat.Repl.Hosts[i]
                 gauges[i].BarColor = termui.ColorYellow
                 if statCache.PreviousStat.Repl.Primary == statCache.PreviousStat.Repl.Hosts[i] {
                     gauges[i].BarColor = termui.ColorGreen
-                }
+                }   
             }
         }
+
         results := make([]string, 0, 10)
         err = RetrieveResults(&results, session)
         if err!=nil {
@@ -174,8 +197,7 @@ func main() {
             session.Refresh()
         }
         ls.Items = results
-        
-        termui.Render(lc0, g1, g2, g3, ls)
+        termui.Render(lc0, lc1, g1, g2, g3, ls)
     })
     
     termui.Loop()

@@ -30,7 +30,7 @@ type StatCache struct {
 
 type ServerStatus struct {
     Host               string                 `bson:"host"`
-    Opcounters         *OpcountStats          `bson:"opcounters"`
+    Opcounters         *OpcountStats          `bson:"opcountersRepl"`
     Repl               *ReplStatus            `bson:"repl"`
 }
 
