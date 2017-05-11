@@ -28,7 +28,7 @@ rs.initiate({_id:"gopher" members:[{_id:0, host:"localhost:30001"}]})
 
 Run client to insert random documents
 ```
-while true; do echo 'inserting'; ./bin/insert; sleep 2; done
+for i in `seq 1 10`; do echo 'inserting'; ./bin/insert; ./bin/insert; sleep 1; done
 ```
 
 Run web server: 
