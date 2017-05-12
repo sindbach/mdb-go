@@ -1,5 +1,8 @@
-# mgo-intro
+# mdb-go (MongoDB and Go)
+
 Introduction to mgo (MongoDB Go Driver) connecting to replica set
+
+For a more proper MongoDB utilities please see [mongodb/mongo-tools](https://github.com/mongodb/mongo-tools) repository.
 
 ## Building
 
