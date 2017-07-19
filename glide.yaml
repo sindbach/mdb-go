@@ -1,6 +1,7 @@
 package: mdb-go
 import:
 - package: github.com/gizak/termui
+  version: ~2.2.0
 - package: github.com/sindbach/mdb-go
   subpackages:
   - models
